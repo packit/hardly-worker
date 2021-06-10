@@ -34,3 +34,4 @@ check_in_container: test_image
 
 check-inside-openshift-zuul:
 	ANSIBLE_STDOUT_CALLBACK=debug $(AP) files/check-inside-openshift.yaml
+
