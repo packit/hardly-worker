@@ -44,8 +44,6 @@ logger = logging.getLogger(__name__)
 
 # Don't import this (or anything) from p_s.worker.tasks,
 # it would create the task from their process_message()
-
-
 @after_setup_logger.connect
 def setup_loggers(logger, *args, **kwargs):
     # debug logs of these are super-duper verbose
