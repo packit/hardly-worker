@@ -3,9 +3,15 @@
 
 import logging
 from os import getenv
+from socket import gaierror
 from typing import List
 
+# Let a remote debugger (Visual Studio Code client)
+# access this running instance.
+import debugpy
 from celery import Task
+from celery.signals import after_setup_logger
+from syslog_rfc5424_formatter import RFC5424Formatter
 
 from hardly.handlers.abstract import TaskName
 from hardly.handlers.distgit import (
@@ -23,10 +29,6 @@ from packit_service.constants import (
 from packit_service.utils import load_job_config, load_package_config
 from packit_service.worker.result import TaskResults
 
-# Let a remote debugger (Visual Studio Code client)
-# access this running instance.
-import debugpy
-
 # Allow other computers to attach to debugpy at this IP address and port.
 debugpy.listen(("0.0.0.0", 5678))
 
@@ -39,18 +41,34 @@ debugpy.listen(("0.0.0.0", 5678))
 
 logger = logging.getLogger(__name__)
 
-# debug logs of these are super-duper verbose
-logging.getLogger("requests").setLevel(logging.WARNING)
-logging.getLogger("urllib3").setLevel(logging.WARNING)
-logging.getLogger("github").setLevel(logging.WARNING)
-logging.getLogger("kubernetes").setLevel(logging.WARNING)
-logging.getLogger("botocore").setLevel(logging.WARNING)
-# info is just enough
-# logging.getLogger("ogr").setLevel(logging.INFO)
-# easier debugging
-logging.getLogger("ogr").setLevel(logging.DEBUG)
-logging.getLogger("packit").setLevel(logging.DEBUG)
-logging.getLogger("sandcastle").setLevel(logging.DEBUG)
+
+# Don't import this (or anything) from p_s.worker.tasks,
+# it would create the task from their process_message()
+@after_setup_logger.connect
+def setup_loggers(logger, *args, **kwargs):
+    # debug logs of these are super-duper verbose
+    logging.getLogger("requests").setLevel(logging.WARNING)
+    logging.getLogger("urllib3").setLevel(logging.WARNING)
+    logging.getLogger("github").setLevel(logging.WARNING)
+    logging.getLogger("botocore").setLevel(logging.WARNING)
+    logging.getLogger("s3transfer").setLevel(logging.WARNING)
+    # info is just enough
+    logging.getLogger("ogr").setLevel(logging.INFO)
+    # easier debugging
+    logging.getLogger("packit").setLevel(logging.DEBUG)
+
+    syslog_host = getenv("SYSLOG_HOST", "fluentd")
+    syslog_port = int(getenv("SYSLOG_PORT", 5140))
+    logger.info(f"Setup logging to syslog -> {syslog_host}:{syslog_port}")
+    try:
+        handler = logging.handlers.SysLogHandler(address=(syslog_host, syslog_port))
+    except (ConnectionRefusedError, gaierror):
+        logger.info(f"{syslog_host}:{syslog_port} not available")
+    else:
+        handler.setLevel(logging.DEBUG)
+        project = getenv("PROJECT", "hardly")
+        handler.setFormatter(RFC5424Formatter(msgid=project))
+        logger.addHandler(handler)
 
 
 # Don't import this (or anything) from p_s.worker.tasks,
