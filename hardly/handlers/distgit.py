@@ -277,6 +277,16 @@ class SyncFromDistGitPRHandler(JobHandler):
     def dist_git_pr_model(self) -> Optional[PullRequestModel]:
         raise NotImplementedError("This should have been implemented.")
 
+    @staticmethod
+    def get_gitlab_account_name() -> str:
+        # https://github.com/packit/ogr/issues/751
+        return {
+            "stream-prod": "centos-stream-packit",
+            "stream-stg": "packit-as-a-service-stg",
+            "fedora-source-git-prod": "packit-as-a-service",
+            "fedora-source-git-stg": "packit-as-a-service-stg",
+        }[getenv("PROJECT", "stream-stg")]
+
     def run(self) -> TaskResults:
         """
         When a dist-git PR flag/pipeline is updated, create a commit
@@ -303,7 +313,7 @@ class SyncFromDistGitPRHandler(JobHandler):
             # If there was a new commit pushed before the pipeline ended, the report
             # might be incorrect until the new (for the new commit) pipeline finishes.
             commit_sha=source_git_pr.head_commit,
-            pr_id=source_git_pr.id,
+            packit_user=self.get_gitlab_account_name(),
         )
         # Our account(s) have no access (unless it's manually added) into the fork repos,
         # to set the commit status (which would look like a Pipeline result)
