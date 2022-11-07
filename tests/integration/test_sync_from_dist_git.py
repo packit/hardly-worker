@@ -81,7 +81,9 @@ def test_sync_from_dist_git(
         url=status_url,
     )
     flexmock(StatusReporter).should_receive("get_instance").with_args(
-        project=source_git_project, commit_sha="foobar", pr_id=123
+        project=source_git_project,
+        commit_sha="foobar",
+        packit_user="packit-as-a-service-stg",
     ).and_return(status_reporter)
 
     handler(
