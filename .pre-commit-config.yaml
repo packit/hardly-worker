@@ -43,6 +43,10 @@ repos:
       - id: mypy
         args: [--ignore-missing-imports]
         additional_dependencies: [types-pkg_resources]
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.8.0.4
+    hooks:
+      - id: shellcheck
   - repo: https://github.com/packit/pre-commit-hooks
     rev: 8db5a24e01b9f54aaa7a800f33c4b9aa619af1b9
     hooks:
