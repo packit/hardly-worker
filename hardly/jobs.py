@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: MIT
 
 from logging import getLogger
-from typing import List
+from typing import List, Optional
 
 from hardly.handlers import (
     DistGitMRHandler,
@@ -29,7 +29,7 @@ class StreamJobs(SteveJobs):
         # return super().process_jobs(event)
 
     def process_message(
-        self, event: dict, topic: str = None, source: str = None
+        self, event: dict, topic: Optional[str] = None, source: Optional[str] = None
     ) -> List[TaskResults]:
         """
         Entrypoint for message processing.

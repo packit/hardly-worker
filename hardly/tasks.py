@@ -4,7 +4,7 @@
 import logging
 from os import getenv
 from socket import gaierror
-from typing import List
+from typing import List, Optional
 
 # Let a remote debugger (Visual Studio Code client)
 # access this running instance.
@@ -85,7 +85,7 @@ class HandlerTaskWithRetry(Task):
     name=getenv("CELERY_MAIN_TASK_NAME") or CELERY_DEFAULT_MAIN_TASK_NAME, bind=True
 )
 def hardly_process(
-    self, event: dict, topic: str = None, source: str = None
+    self, event: dict, topic: Optional[str] = None, source: Optional[str] = None
 ) -> List[TaskResults]:
     """
     Main celery task for processing messages.
