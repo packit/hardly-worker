@@ -4,6 +4,8 @@ import pytest
 from flexmock import flexmock
 
 from hardly.tasks import run_dist_git_sync_handler
+from ogr.services.gitlab import GitlabProject, GitlabPullRequest
+from ogr.services.pagure import PagureProject
 from packit.api import PackitAPI
 from packit.config.job_config import JobConfigTriggerType
 from packit.local_project import LocalProject
@@ -15,10 +17,7 @@ from packit_service.service.db_triggers import AddPullRequestDbTrigger
 from packit_service.utils import dump_package_config
 from packit_service.worker.monitoring import Pushgateway
 from packit_service.worker.parser import Parser
-from ogr.services.gitlab import GitlabProject, GitlabPullRequest
-from ogr.services.pagure import PagureProject
 from tests.spellbook import first_dict_value
-
 
 source_git_yaml = """ {
     "upstream_project_url": "https://github.com/vmware/open-vm-tools.git",
@@ -52,35 +51,26 @@ source_git_yaml = """ {
 
 
 @pytest.mark.parametrize(
-    "source_git_yaml, downstream_branches, expected_branch, notify_msg",
+    "source_git_yaml, downstream_branches, expected_branch, sync_release",
     [
         pytest.param(
             source_git_yaml,
             ["master", "c9s"],
             "c9s",
-            False,
+            True,
             id="Use upstream branch name in downstream",
         ),
         pytest.param(
-            source_git_yaml.replace(
-                """
-    "downstream_package_name": "open-vm-tools",
-""",
-                """
-    "downstream_package_name": "open-vm-tools",
-""",
-            ),
-            [
-                "master",
-            ],
+            source_git_yaml,
+            ["master"],
             "c9s",
-            True,
+            False,
             id="Notify user that branch does not exist",
         ),
     ],
 )
 def test_dist_git_mr(
-    mr_event, source_git_yaml, downstream_branches, expected_branch, notify_msg
+    mr_event, source_git_yaml, downstream_branches, expected_branch, sync_release
 ):
     version = "11.3.0"
 
@@ -118,9 +108,10 @@ def test_dist_git_mr(
     config.gitlab_mr_targets_handled = None
     flexmock(ServiceConfig).should_receive("get_service_config").and_return(config)
     flexmock(Pushgateway).should_receive("push").once().and_return()
-    if notify_msg:
-        flexmock(GitlabPullRequest).should_receive("comment").and_return()
-    else:
+    flexmock(GitlabPullRequest).should_receive("comment").and_return()
+    if sync_release:
+        flexmock(SourceGitPRDistGitPRModel).should_receive("get_by_dist_git_id")
+        flexmock(SourceGitPRDistGitPRModel).should_receive("get_or_create")
         (
             flexmock(PackitAPI)
             .should_receive("sync_release")
@@ -142,6 +133,15 @@ This MR has been automatically created from
                 mark_commit_origin=True,
             )
             .once()
+            .and_return(
+                flexmock(
+                    id=1,
+                    target_project=flexmock(
+                        namespace="", repo="", get_web_url=lambda: ""
+                    ),
+                    url="",
+                )
+            )
         )
 
     event = Parser.parse_event(mr_event)

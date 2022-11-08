@@ -131,7 +131,7 @@ class DistGitMRHandler(JobHandler):
             )
         return self._packit
 
-    def sync_release(self):
+    def sync_release(self) -> PullRequest:
         dg_mr_info = f"""###### Info for package maintainer
 This MR has been automatically created from
 [this source-git MR]({self.mr_url})."""
@@ -185,6 +185,23 @@ you should trigger a CI pipeline run via `Pipelines → Run pipeline`."""
             self.dist_git_pr.comment(msg)
         return True
 
+    @staticmethod
+    def dist_git_mr_in_db(dg_mr: PullRequest) -> bool:
+        dg_mr_model = PullRequestModel.get_or_create(
+            pr_id=dg_mr.id,
+            namespace=dg_mr.target_project.namespace,
+            repo_name=dg_mr.target_project.repo,
+            project_url=dg_mr.target_project.get_web_url(),
+        )
+        if sg_dg := SourceGitPRDistGitPRModel.get_by_dist_git_id(dg_mr_model.id):
+            logger.error(
+                f"Packit didn't create a new dist-git MR probably because a MR (#{dg_mr.id}) "
+                "with the same title & description & target branch already exists. "
+                f"It was created from src-git MR #{sg_dg.source_git_pull_request.pr_id}."
+            )
+            return True
+        return False
+
     def run(self) -> TaskResults:
         """
         If user creates a merge-request on the source-git repository,
@@ -198,6 +215,7 @@ you should trigger a CI pipeline run via `Pipelines → Run pipeline`."""
             return TaskResults(success=True)
 
         if self.dist_git_pr_model:
+            # There already is a corresponding dist-git MR, let's update it.
             return TaskResults(success=self.handle_existing_dist_git_pr())
 
         if not self.package_config:
@@ -219,24 +237,28 @@ you should trigger a CI pipeline run via `Pipelines → Run pipeline`."""
 
         logger.info(f"About to create a dist-git MR from source-git MR {self.mr_url}")
 
-        if dg_mr := self.sync_release():
-            comment = f"""[Dist-git MR #{dg_mr.id}]({dg_mr.url})
+        dg_mr = self.sync_release()
+        # This check is probably not needed, it's here in case the #70 appears again.
+        if self.dist_git_mr_in_db(dg_mr):
+            return TaskResults(success=False)
+
+        comment = f"""[Dist-git MR #{dg_mr.id}]({dg_mr.url})
 has been created for sake of triggering the downstream checks.
 It ensures that your contribution is valid and can be incorporated in
 dist-git as it is still the authoritative source for the distribution.
 We want to run checks there only so they don't need to be reimplemented in source-git as well."""
-            self.project.get_pr(int(self.mr_identifier)).comment(comment)
+        self.project.get_pr(int(self.mr_identifier)).comment(comment)
 
-            SourceGitPRDistGitPRModel.get_or_create(
-                self.mr_identifier,
-                self.project.namespace,
-                self.project.repo,
-                self.project.get_web_url(),
-                dg_mr.id,
-                dg_mr.target_project.namespace,
-                dg_mr.target_project.repo,
-                dg_mr.target_project.get_web_url(),
-            )
+        SourceGitPRDistGitPRModel.get_or_create(
+            self.mr_identifier,
+            self.project.namespace,
+            self.project.repo,
+            self.project.get_web_url(),
+            dg_mr.id,
+            dg_mr.target_project.namespace,
+            dg_mr.target_project.repo,
+            dg_mr.target_project.get_web_url(),
+        )
 
         return TaskResults(success=True)
 
