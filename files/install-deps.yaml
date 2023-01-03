@@ -13,10 +13,3 @@
         name:
           - centpkg
           - tig # for debugging, can be removed later
-    - name: Downgrade rsync
-      ansible.builtin.dnf:
-        name:
-          # Fixes rsync error: protocol incompatibility (code 2) at flist.c(994) [Receiver=3.2.5]
-          # https://bugzilla.redhat.com/show_bug.cgi?id=2123815#c9
-          - https://download.copr.fedorainfracloud.org/results/jpopelka/rsync/fedora-35-x86_64/04838549-rsync/rsync-3.2.6-2.fc35.x86_64.rpm
-        disable_gpg_check: true
