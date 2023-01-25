@@ -5,7 +5,7 @@ from logging import getLogger
 from typing import List, Optional
 
 from hardly.handlers import (
-    DistGitMRHandler,
+    DistGitPRHandler,
     SyncFromGitlabMRHandler,
     SyncFromPagurePRHandler,
 )
@@ -63,7 +63,7 @@ class StreamJobs(SteveJobs):
 
         # Handlers are (for now) run even the job is not configured in a package.
         if isinstance(event_object, MergeRequestGitlabEvent):
-            DistGitMRHandler.get_signature(
+            DistGitPRHandler.get_signature(
                 event=event_object,
                 job=None,
             ).apply_async()

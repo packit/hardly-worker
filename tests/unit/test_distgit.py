@@ -4,7 +4,7 @@
 import pytest
 
 from flexmock import flexmock
-from hardly.handlers.distgit import DistGitMRHandler, fix_bz_refs
+from hardly.handlers.distgit import DistGitPRHandler, fix_bz_refs
 
 
 @pytest.mark.parametrize(
@@ -68,7 +68,7 @@ def test_handle_target(targets_handled, target_repo, target_branch, handled):
         target_repo=target_repo,
         target_repo_branch=target_branch,
     )
-    assert DistGitMRHandler.handle_target(mock_mr_handler) == handled
+    assert DistGitPRHandler.handle_target(mock_mr_handler) == handled
 
 
 def test_fix_bz_refs():

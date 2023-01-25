@@ -12,7 +12,7 @@ from syslog_rfc5424_formatter import RFC5424Formatter
 
 from hardly.handlers.abstract import TaskName
 from hardly.handlers.distgit import (
-    DistGitMRHandler,
+    DistGitPRHandler,
     SyncFromGitlabMRHandler,
     SyncFromPagurePRHandler,
 )
@@ -100,7 +100,7 @@ def hardly_process(
 
 @celery_app.task(name=TaskName.dist_git_pr, base=HandlerTaskWithRetry)
 def run_dist_git_sync_handler(event: dict, package_config: dict, job_config: dict):
-    handler = DistGitMRHandler(
+    handler = DistGitPRHandler(
         package_config=load_package_config(package_config),
         job_config=load_job_config(job_config),
         event=event,

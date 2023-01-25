@@ -4,7 +4,6 @@
 import re
 from logging import getLogger
 from os import getenv
-from re import fullmatch
 from typing import Optional
 
 from hardly.handlers.abstract import TaskName
@@ -49,7 +48,7 @@ def fix_bz_refs(message: str) -> str:
 
 # @configured_as(job_type=JobType.dist_git_pr)  # Requires a change in packit
 @reacts_to(event=MergeRequestGitlabEvent)
-class DistGitMRHandler(
+class DistGitPRHandler(
     JobHandler,
     ConfigFromEventMixin,
     PackitAPIWithUpstreamMixin,
@@ -68,10 +67,10 @@ class DistGitMRHandler(
             event=event,
         )
         self.action = event["action"]
-        self.mr_identifier = event["identifier"]
-        self.mr_title = event["title"]
-        self.mr_description = event["description"]
-        self.mr_url = event["url"]
+        self.pr_identifier = event["identifier"]
+        self.pr_title = event["title"]
+        self.pr_description = event["description"]
+        self.pr_url = event["url"]
         self.source_project_url = event["source_project_url"]
         self.target_repo = (
             f"{event['target_repo_namespace']}/{event['target_repo_name']}"
@@ -89,7 +88,7 @@ class DistGitMRHandler(
     def source_git_pr_model(self) -> PullRequestModel:
         if not self._source_git_pr_model:
             self._source_git_pr_model = PullRequestModel.get_or_create(
-                pr_id=self.mr_identifier,
+                pr_id=self.pr_identifier,
                 namespace=self.project.namespace,
                 repo_name=self.project.repo,
                 project_url=self.project.get_web_url(),
@@ -141,11 +140,11 @@ class DistGitMRHandler(
         return self._packit_api
 
     def sync_release(self) -> PullRequest:
-        dg_mr_info = f"""###### Info for package maintainer
+        dg_pr_info = f"""###### Info for package maintainer
 This MR has been automatically created from
-[this source-git MR]({self.mr_url})."""
+[this source-git MR]({self.pr_url})."""
         if getenv("PROJECT", "").startswith("stream"):
-            dg_mr_info += """
+            dg_pr_info += """
 Please review the contribution and once you are comfortable with the content,
 you should trigger a CI pipeline run via `Pipelines → Run pipeline`."""
 
@@ -153,11 +152,11 @@ you should trigger a CI pipeline run via `Pipelines → Run pipeline`."""
             dist_git_branch=self.target_repo_branch,
             version=self.packit_api.up.get_specfile_version(),
             add_new_sources=False,
-            title=self.mr_title,
-            description=f"{fix_bz_refs(self.mr_description)}\n\n---\n{dg_mr_info}",
+            title=self.pr_title,
+            description=f"{fix_bz_refs(self.pr_description)}\n\n---\n{dg_pr_info}",
             sync_default_files=False,
             # we rely on this in PipelineHandler below
-            local_pr_branch_suffix=f"src-{self.mr_identifier}",
+            local_pr_branch_suffix=f"src-{self.pr_identifier}",
             mark_commit_origin=True,
         )
 
@@ -173,14 +172,14 @@ you should trigger a CI pipeline run via `Pipelines → Run pipeline`."""
         if self.dist_git_pr:
             msg = ""
             if self.action == GitlabEventAction.closed.value:
-                msg = f"[Source-git MR]({self.mr_url}) has been closed."
+                msg = f"[Source-git MR]({self.pr_url}) has been closed."
                 self.dist_git_pr.close()
             elif self.action == GitlabEventAction.reopen.value:
-                msg = f"[Source-git MR]({self.mr_url}) has been reopened."
+                msg = f"[Source-git MR]({self.pr_url}) has been reopened."
                 # https://github.com/packit/ogr/pull/714
                 # self.dist_git_pr.reopen()
             elif self.action == GitlabEventAction.update.value:
-                msg = f"[Source-git MR]({self.mr_url}) has been updated."
+                msg = f"[Source-git MR]({self.pr_url}) has been updated."
                 # update the dist-git PR if there are code changes
                 if self.oldrev:
                     self.sync_release()
@@ -188,23 +187,23 @@ you should trigger a CI pipeline run via `Pipelines → Run pipeline`."""
                 # Are you trying to re-send a webhook payload to the endpoint manually?
                 # If so and you expect a new dist-git PR being opened, you first
                 # have to remove the old relation from db.
-                logger.error(f"[Source-git MR]({self.mr_url}) opened. (again???)")
+                logger.error(f"[Source-git MR]({self.pr_url}) opened. (again???)")
                 return False
             logger.info(msg)
             self.dist_git_pr.comment(msg)
         return True
 
     @staticmethod
-    def dist_git_mr_in_db(dg_mr: PullRequest) -> bool:
-        dg_mr_model = PullRequestModel.get_or_create(
-            pr_id=dg_mr.id,
-            namespace=dg_mr.target_project.namespace,
-            repo_name=dg_mr.target_project.repo,
-            project_url=dg_mr.target_project.get_web_url(),
+    def dist_git_pr_in_db(dg_pr: PullRequest) -> bool:
+        dg_pr_model = PullRequestModel.get_or_create(
+            pr_id=dg_pr.id,
+            namespace=dg_pr.target_project.namespace,
+            repo_name=dg_pr.target_project.repo,
+            project_url=dg_pr.target_project.get_web_url(),
         )
-        if sg_dg := SourceGitPRDistGitPRModel.get_by_dist_git_id(dg_mr_model.id):
+        if sg_dg := SourceGitPRDistGitPRModel.get_by_dist_git_id(dg_pr_model.id):
             logger.error(
-                f"Packit didn't create a new dist-git MR probably because a MR (#{dg_mr.id}) "
+                f"Packit didn't create a new dist-git MR probably because a MR (#{dg_pr.id}) "
                 "with the same title & description & target branch already exists. "
                 f"It was created from src-git MR #{sg_dg.source_git_pull_request.pr_id}."
             )
@@ -240,33 +239,33 @@ you should trigger a CI pipeline run via `Pipelines → Run pipeline`."""
                 f"because matching {self.target_repo_branch} branch does not exist "
                 f"in dist-git {self.target_repo} repo."
             )
-            self.project.get_pr(int(self.mr_identifier)).comment(msg)
+            self.project.get_pr(int(self.pr_identifier)).comment(msg)
             logger.info(msg)
             return TaskResults(success=True)
 
-        logger.info(f"About to create a dist-git MR from source-git MR {self.mr_url}")
+        logger.info(f"About to create a dist-git MR from source-git MR {self.pr_url}")
 
-        dg_mr = self.sync_release()
+        dg_pr = self.sync_release()
         # This check is probably not needed, it's here in case the #70 appears again.
-        if self.dist_git_mr_in_db(dg_mr):
+        if self.dist_git_pr_in_db(dg_pr):
             return TaskResults(success=False)
 
-        comment = f"""[Dist-git MR #{dg_mr.id}]({dg_mr.url})
+        comment = f"""[Dist-git MR #{dg_pr.id}]({dg_pr.url})
 has been created for sake of triggering the downstream checks.
 It ensures that your contribution is valid and can be incorporated in
 dist-git as it is still the authoritative source for the distribution.
 We want to run checks there only so they don't need to be reimplemented in source-git as well."""
-        self.project.get_pr(int(self.mr_identifier)).comment(comment)
+        self.project.get_pr(int(self.pr_identifier)).comment(comment)
 
         SourceGitPRDistGitPRModel.get_or_create(
-            self.mr_identifier,
+            self.pr_identifier,
             self.project.namespace,
             self.project.repo,
             self.project.get_web_url(),
-            dg_mr.id,
-            dg_mr.target_project.namespace,
-            dg_mr.target_project.repo,
-            dg_mr.target_project.get_web_url(),
+            dg_pr.id,
+            dg_pr.target_project.namespace,
+            dg_pr.target_project.repo,
+            dg_pr.target_project.get_web_url(),
         )
 
         return TaskResults(success=True)
@@ -410,7 +409,9 @@ class SyncFromGitlabMRHandler(SyncFromDistGitPRHandler):
                 return None
             # Derive project from merge_request_url because
             # self.project can be either source or target
-            if m := fullmatch(r"(\S+)/-/merge_requests/(\d+)", self.merge_request_url):
+            if m := re.fullmatch(
+                r"(\S+)/-/merge_requests/(\d+)", self.merge_request_url
+            ):
                 project = self.service_config.get_project(url=m[1])
                 return PullRequestModel.get_or_create(
                     pr_id=int(m[2]),
