@@ -51,27 +51,21 @@ source_git_yaml = """ {
 
 
 @pytest.mark.parametrize(
-    "source_git_yaml, downstream_branches, expected_branch, sync_release",
+    "dist_git_branches, target_repo_branch",
     [
         pytest.param(
-            source_git_yaml,
             ["master", "c9s"],
             "c9s",
-            True,
             id="Use upstream branch name in downstream",
         ),
         pytest.param(
-            source_git_yaml,
             ["master"],
             "c9s",
-            False,
             id="Notify user that branch does not exist",
         ),
     ],
 )
-def test_dist_git_mr(
-    mr_event, source_git_yaml, downstream_branches, expected_branch, sync_release
-):
+def test_dist_git_mr(mr_event, dist_git_branches, target_repo_branch):
     version = "11.3.0"
 
     trigger = flexmock(
@@ -98,9 +92,7 @@ def test_dist_git_mr(
     lp.should_receive("fetch").with_args(
         "https://gitlab.com/packit-service/src/open-vm-tools", force=True
     )
-    flexmock(PagureProject).should_receive("get_branches").and_return(
-        downstream_branches
-    )
+    flexmock(PagureProject).should_receive("get_branches").and_return(dist_git_branches)
     flexmock(Upstream).should_receive("get_specfile_version").and_return(version)
 
     config = ServiceConfig()
@@ -110,14 +102,14 @@ def test_dist_git_mr(
     flexmock(ServiceConfig).should_receive("get_service_config").and_return(config)
     flexmock(Pushgateway).should_receive("push").once().and_return()
     flexmock(GitlabPullRequest).should_receive("comment").and_return()
-    if sync_release:
+    if target_repo_branch in dist_git_branches:
         flexmock(SourceGitPRDistGitPRModel).should_receive("get_by_dist_git_id")
         flexmock(SourceGitPRDistGitPRModel).should_receive("get_or_create")
         (
             flexmock(PackitAPI)
             .should_receive("sync_release")
             .with_args(
-                dist_git_branch=expected_branch,
+                dist_git_branch=target_repo_branch,
                 version=version,
                 add_new_sources=False,
                 title="Yet another testing MR",
