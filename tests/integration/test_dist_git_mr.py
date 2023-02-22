@@ -106,6 +106,7 @@ def test_dist_git_mr(
     config = ServiceConfig()
     config.command_handler_work_dir = SANDCASTLE_WORK_DIR
     config.gitlab_mr_targets_handled = None
+    config.package_config_path_override = ".distro/source-git.yaml"
     flexmock(ServiceConfig).should_receive("get_service_config").and_return(config)
     flexmock(Pushgateway).should_receive("push").once().and_return()
     flexmock(GitlabPullRequest).should_receive("comment").and_return()
