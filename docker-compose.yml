@@ -44,6 +44,7 @@ services:
       DISTGIT_NAMESPACE: ${DISTGIT_NAMESPACE}
       CELERY_RETRY_LIMIT: 0
       PUSHGATEWAY_ADDRESS: ""
+    #       DEBUGPY: True
     volumes:
       - ./hardly:/src/hardly:ro,z
       - ../ogr/ogr:/usr/local/lib/python3.11/site-packages/ogr:ro,z
