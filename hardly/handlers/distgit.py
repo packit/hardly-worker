@@ -17,10 +17,7 @@ from packit_service.models import PullRequestModel, SourceGitPRDistGitPRModel
 from packit_service.worker.events import MergeRequestGitlabEvent, PipelineGitlabEvent
 from packit_service.worker.events.enums import GitlabEventAction
 from packit_service.worker.events.pagure import PullRequestFlagPagureEvent
-from packit_service.worker.handlers import JobHandler
-from packit_service.worker.handlers.abstract import (
-    reacts_to,
-)
+from packit_service.worker.handlers.abstract import JobHandler, reacts_to
 from packit_service.worker.mixin import (
     ConfigFromEventMixin,
     PackitAPIWithUpstreamMixin,

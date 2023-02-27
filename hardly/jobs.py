@@ -15,7 +15,7 @@ from packit_service.worker.events import (
     PipelineGitlabEvent,
 )
 from packit_service.worker.events.pagure import PullRequestFlagPagureEvent
-from packit_service.worker.handlers import JobHandler
+from packit_service.worker.handlers.abstract import JobHandler
 from packit_service.worker.jobs import SteveJobs
 from packit_service.worker.parser import Parser
 from packit_service.worker.result import TaskResults
