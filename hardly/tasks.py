@@ -6,9 +6,6 @@ from os import getenv
 from socket import gaierror
 from typing import List, Optional
 
-# Let a remote debugger (Visual Studio Code client)
-# access this running instance.
-import debugpy
 from celery import Task
 from celery.signals import after_setup_logger
 from syslog_rfc5424_formatter import RFC5424Formatter
@@ -29,15 +26,18 @@ from packit_service.constants import (
 from packit_service.utils import load_job_config, load_package_config
 from packit_service.worker.result import TaskResults
 
-# Allow other computers to attach to debugpy at this IP address and port.
-debugpy.listen(("0.0.0.0", 5678))
+# Let a remote debugger (Visual Studio Code client)
+# access this running instance.
+if getenv("DEBUGPY"):
+    import debugpy
 
-# Uncomment the following lines if you want to
-# pause the program until a remote debugger is attached
+    # Allow other computers to attach to debugpy at this IP address and port.
+    debugpy.listen(("0.0.0.0", 5678))
 
-# print("Waiting for debugger attach")
-# debugpy.wait_for_client()
-# debugpy.breakpoint()
+    # To pause the program until a remote debugger is attached
+    print("Waiting for debugger attach")
+    debugpy.wait_for_client()
+    debugpy.breakpoint()
 
 logger = logging.getLogger(__name__)
 

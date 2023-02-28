@@ -13,3 +13,7 @@
         name:
           - centpkg
           - tig # for debugging, can be removed later
+    - name: Install pip deps
+      ansible.builtin.pip:
+        name:
+          - debugpy # Allow remote debugging

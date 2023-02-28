@@ -17,9 +17,10 @@ from packit_service.models import PullRequestModel, SourceGitPRDistGitPRModel
 from packit_service.worker.events import MergeRequestGitlabEvent, PipelineGitlabEvent
 from packit_service.worker.events.enums import GitlabEventAction
 from packit_service.worker.events.pagure import PullRequestFlagPagureEvent
-from packit_service.worker.handlers import JobHandler
-from packit_service.worker.handlers.abstract import (
-    reacts_to,
+from packit_service.worker.handlers.abstract import JobHandler, reacts_to
+from packit_service.worker.mixin import (
+    ConfigFromEventMixin,
+    PackitAPIWithUpstreamMixin,
 )
 from packit_service.worker.reporting import StatusReporter, BaseCommitStatus
 from packit_service.worker.result import TaskResults
@@ -48,7 +49,11 @@ def fix_bz_refs(message: str) -> str:
 
 # @configured_as(job_type=JobType.dist_git_pr)  # Requires a change in packit
 @reacts_to(event=MergeRequestGitlabEvent)
-class DistGitMRHandler(JobHandler):
+class DistGitMRHandler(
+    JobHandler,
+    ConfigFromEventMixin,
+    PackitAPIWithUpstreamMixin,
+):
     task_name = TaskName.dist_git_pr
 
     def __init__(
@@ -78,7 +83,7 @@ class DistGitMRHandler(JobHandler):
         self._source_git_pr_model = None
         self._dist_git_pr_model = None
         self._dist_git_pr = None
-        self._packit = None
+        self._local_project: Optional[LocalProject] = None
 
     @property
     def source_git_pr_model(self) -> PullRequestModel:
@@ -110,26 +115,30 @@ class DistGitMRHandler(JobHandler):
         return self._dist_git_pr
 
     @property
-    def packit(self) -> PackitAPI:
-        if not self._packit:
+    def local_project(self) -> LocalProject:
+        if not self._local_project:
             source_project = self.service_config.get_project(
                 url=self.source_project_url
             )
-            local_project = LocalProject(
+            self._local_project = LocalProject(
                 git_project=source_project,
                 ref=self.data.commit_sha,
                 working_dir=self.service_config.command_handler_work_dir,
             )
             # We need to fetch tags from the upstream source-git repo
             # Details: https://github.com/packit/hardly/issues/61
-            local_project.fetch(self.project.get_web_url(), force=True)
+            self._local_project.fetch(self.project.get_web_url(), force=True)
+        return self._local_project
 
-            self._packit = PackitAPI(
+    @property
+    def packit_api(self):
+        if not self._packit_api:
+            self._packit_api = PackitAPI(
                 config=self.service_config,
                 package_config=self.package_config,
-                upstream_local_project=local_project,
+                upstream_local_project=self.local_project,
             )
-        return self._packit
+        return self._packit_api
 
     def sync_release(self) -> PullRequest:
         dg_mr_info = f"""###### Info for package maintainer
@@ -140,9 +149,9 @@ This MR has been automatically created from
 Please review the contribution and once you are comfortable with the content,
 you should trigger a CI pipeline run via `Pipelines → Run pipeline`."""
 
-        return self.packit.sync_release(
+        return self.packit_api.sync_release(
             dist_git_branch=self.target_repo_branch,
-            version=self.packit.up.get_specfile_version(),
+            version=self.packit_api.up.get_specfile_version(),
             add_new_sources=False,
             title=self.mr_title,
             description=f"{fix_bz_refs(self.mr_description)}\n\n---\n{dg_mr_info}",
@@ -224,7 +233,7 @@ you should trigger a CI pipeline run via `Pipelines → Run pipeline`."""
 
         if (
             self.target_repo_branch
-            not in self.packit.dg.local_project.git_project.get_branches()
+            not in self.packit_api.dg.local_project.git_project.get_branches()
         ):
             msg = (
                 "Can't create a dist-git pull/merge request out of this contribution "
@@ -278,7 +287,11 @@ We want to run checks there only so they don't need to be reimplemented in sourc
         return False
 
 
-class SyncFromDistGitPRHandler(JobHandler):
+class SyncFromDistGitPRHandler(
+    JobHandler,
+    ConfigFromEventMixin,
+    PackitAPIWithUpstreamMixin,
+):
     def __init__(
         self,
         package_config: PackageConfig,
