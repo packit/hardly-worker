@@ -92,11 +92,11 @@
       "http_url": "https://gitlab.com/packit-service/src/open-vm-tools.git"
     },
     "last_commit": {
-      "id": "6b7ede26456bb7fbcc3d1760d43f59a8f4ca7369",
+      "id": "82f9b8108e06a90e9cd0b43e8aafa6b991f981d9",
       "message": "Add check that the packet size received is >= expected packet header size.\n\nDnD RpcV3: A corrupted packet received may result in an OOB\nmemory access if the length of the message received is less than the size\nof the expected packet header.\n",
       "title": "Add check that the packet size received is >= expected packet header size.",
       "timestamp": "2021-08-02T10:33:26+02:00",
-      "url": "https://gitlab.com/packit-service/src/open-vm-tools/-/commit/6b7ede26456bb7fbcc3d1760d43f59a8f4ca7369",
+      "url": "https://gitlab.com/packit-service/src/open-vm-tools/-/commit/82f9b8108e06a90e9cd0b43e8aafa6b991f981d9",
       "author": {
         "name": "John Wolfe",
         "email": "jwolfe@vmware.com"
