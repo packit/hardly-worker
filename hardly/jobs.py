@@ -5,9 +5,9 @@ from logging import getLogger
 from typing import List, Optional
 
 from hardly.handlers import (
-    DistGitPRHandler,
-    SyncFromGitlabMRHandler,
-    SyncFromPagurePRHandler,
+    SourceGitPRToDistGitPRHandler,
+    GitlabCIToSourceGitPRHandler,
+    PagureCIToSourceGitPRHandler,
 )
 from packit_service.worker.events import (
     Event,
@@ -63,19 +63,19 @@ class StreamJobs(SteveJobs):
 
         # Handlers are (for now) run even the job is not configured in a package.
         if isinstance(event_object, MergeRequestGitlabEvent):
-            DistGitPRHandler.get_signature(
+            SourceGitPRToDistGitPRHandler.get_signature(
                 event=event_object,
                 job=None,
             ).apply_async()
 
         if isinstance(event_object, PipelineGitlabEvent):
-            SyncFromGitlabMRHandler.get_signature(
+            GitlabCIToSourceGitPRHandler.get_signature(
                 event=event_object,
                 job=None,
             ).apply_async()
 
         if isinstance(event_object, PullRequestFlagPagureEvent):
-            SyncFromPagurePRHandler.get_signature(
+            PagureCIToSourceGitPRHandler.get_signature(
                 event=event_object,
                 job=None,
             ).apply_async()

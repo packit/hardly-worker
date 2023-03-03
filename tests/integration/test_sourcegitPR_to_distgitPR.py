@@ -3,7 +3,7 @@
 import pytest
 from flexmock import flexmock
 
-from hardly.tasks import run_dist_git_sync_handler
+from hardly.tasks import run_source_git_pr_to_dist_git_pr_handler
 from ogr.services.gitlab import GitlabProject, GitlabPullRequest
 from ogr.services.pagure import PagureProject
 from packit.api import PackitAPI
@@ -65,7 +65,7 @@ source_git_yaml = """ {
         ),
     ],
 )
-def test_dist_git_mr(mr_event, dist_git_branches, target_repo_branch):
+def test_source_git_pr_to_dist_git_pr(mr_event, dist_git_branches, target_repo_branch):
     version = "11.3.0"
 
     trigger = flexmock(
@@ -138,7 +138,7 @@ This MR has been automatically created from
         )
 
     event = Parser.parse_event(mr_event)
-    results = run_dist_git_sync_handler(
+    results = run_source_git_pr_to_dist_git_pr_handler(
         package_config=dump_package_config(event.package_config),
         event=event.get_dict(),
         job_config=None,

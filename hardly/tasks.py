@@ -10,12 +10,12 @@ from celery import Task
 from celery.signals import after_setup_logger
 from syslog_rfc5424_formatter import RFC5424Formatter
 
-from hardly.handlers.abstract import TaskName
-from hardly.handlers.distgit import (
-    DistGitPRHandler,
-    SyncFromGitlabMRHandler,
-    SyncFromPagurePRHandler,
+from hardly.handlers import (
+    SourceGitPRToDistGitPRHandler,
+    GitlabCIToSourceGitPRHandler,
+    PagureCIToSourceGitPRHandler,
 )
+from hardly.handlers.abstract import TaskName
 from hardly.jobs import StreamJobs
 from packit_service.celerizer import celery_app
 from packit_service.constants import (
@@ -98,9 +98,11 @@ def hardly_process(
     return StreamJobs().process_message(event=event, topic=topic, source=source)
 
 
-@celery_app.task(name=TaskName.dist_git_pr, base=HandlerTaskWithRetry)
-def run_dist_git_sync_handler(event: dict, package_config: dict, job_config: dict):
-    handler = DistGitPRHandler(
+@celery_app.task(name=TaskName.source_git_pr_to_dist_git_pr, base=HandlerTaskWithRetry)
+def run_source_git_pr_to_dist_git_pr_handler(
+    event: dict, package_config: dict, job_config: dict
+):
+    handler = SourceGitPRToDistGitPRHandler(
         package_config=load_package_config(package_config),
         job_config=load_job_config(job_config),
         event=event,
@@ -108,11 +110,11 @@ def run_dist_git_sync_handler(event: dict, package_config: dict, job_config: dic
     return get_handlers_task_results(handler.run_job(), event)
 
 
-@celery_app.task(name=TaskName.sync_from_gitlab_mr, base=HandlerTaskWithRetry)
-def run_sync_from_gitlab_mr_handler(
+@celery_app.task(name=TaskName.gitlab_ci_to_source_git_pr, base=HandlerTaskWithRetry)
+def run_gitlab_ci_to_source_git_pr_handler(
     event: dict, package_config: dict, job_config: dict
 ):
-    handler = SyncFromGitlabMRHandler(
+    handler = GitlabCIToSourceGitPRHandler(
         package_config=load_package_config(package_config),
         job_config=load_job_config(job_config),
         event=event,
@@ -120,11 +122,11 @@ def run_sync_from_gitlab_mr_handler(
     return get_handlers_task_results(handler.run_job(), event)
 
 
-@celery_app.task(name=TaskName.sync_from_pagure_pr, base=HandlerTaskWithRetry)
-def run_sync_from_pagure_pr_handler(
+@celery_app.task(name=TaskName.pagure_ci_to_source_git_pr, base=HandlerTaskWithRetry)
+def run_pagure_ci_to_source_git_pr_handler(
     event: dict, package_config: dict, job_config: dict
 ):
-    handler = SyncFromPagurePRHandler(
+    handler = PagureCIToSourceGitPRHandler(
         package_config=load_package_config(package_config),
         job_config=load_job_config(job_config),
         event=event,

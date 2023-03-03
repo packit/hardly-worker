@@ -5,6 +5,6 @@ from enum import Enum
 
 
 class TaskName(str, Enum):
-    dist_git_pr = "task.run_dist_git_pr_handler"
-    sync_from_gitlab_mr = "task.run_sync_from_gitlab_mr_handler"
-    sync_from_pagure_pr = "task.run_sync_from_pagure_pr_handler"
+    source_git_pr_to_dist_git_pr = "task.run_source_git_pr_to_dist_git_pr_handler"
+    gitlab_ci_to_source_git_pr = "task.run_gitlab_ci_to_source_git_pr_handler"
+    pagure_ci_to_source_git_pr = "task.run_pagure_ci_to_source_git_pr_handler"
