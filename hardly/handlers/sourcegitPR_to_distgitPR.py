@@ -6,7 +6,7 @@ from logging import getLogger
 from os import getenv
 from typing import Optional
 
-from hardly.handlers.abstract import TaskName
+from hardly.handlers.abstract import TaskName, reacts_to
 from ogr.abstract import PullRequest
 from packit.api import PackitAPI
 from packit.config.job_config import JobConfig
@@ -15,7 +15,7 @@ from packit.local_project import LocalProject
 from packit_service.models import PullRequestModel, SourceGitPRDistGitPRModel
 from packit_service.worker.events import MergeRequestGitlabEvent
 from packit_service.worker.events.enums import GitlabEventAction
-from packit_service.worker.handlers.abstract import JobHandler, reacts_to
+from packit_service.worker.handlers.abstract import JobHandler
 from packit_service.worker.mixin import (
     ConfigFromEventMixin,
     PackitAPIWithUpstreamMixin,
@@ -44,7 +44,6 @@ def fix_bz_refs(message: str) -> str:
     return re.sub(pattern, repl, message, flags=re.MULTILINE)
 
 
-# @configured_as(job_type=JobType.dist_git_pr)  # Requires a change in packit
 @reacts_to(event=MergeRequestGitlabEvent)
 class SourceGitPRToDistGitPRHandler(
     JobHandler,

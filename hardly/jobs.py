@@ -2,19 +2,10 @@
 # SPDX-License-Identifier: MIT
 
 from logging import getLogger
-from typing import List
+from typing import List, Set, Type
 
-from hardly.handlers import (
-    SourceGitPRToDistGitPRHandler,
-    GitlabCIToSourceGitPRHandler,
-    PagureCIToSourceGitPRHandler,
-)
-from packit_service.worker.events import (
-    Event,
-    MergeRequestGitlabEvent,
-    PipelineGitlabEvent,
-)
-from packit_service.worker.events.pagure import PullRequestFlagPagureEvent
+from hardly.handlers.abstract import SUPPORTED_EVENTS_FOR_HANDLER
+from packit_service.worker.handlers import JobHandler
 from packit_service.worker.jobs import SteveJobs
 from packit_service.worker.parser import Parser
 from packit_service.worker.result import TaskResults
@@ -23,9 +14,17 @@ logger = getLogger(__name__)
 
 
 class StreamJobs(SteveJobs):
-    def process_jobs(self, event: Event) -> List[TaskResults]:
-        return []  # For now, don't process default jobs, i.e. copr-build & tests
-        # return super().process_jobs(event)
+    def get_handlers_for_event(self) -> Set[Type[JobHandler]]:
+        matching_handlers = {
+            handler
+            for handler in SUPPORTED_EVENTS_FOR_HANDLER.keys()
+            if isinstance(self.event, tuple(SUPPORTED_EVENTS_FOR_HANDLER[handler]))
+        }
+        if not matching_handlers:
+            logger.debug(f"No handler found for event:\n{self.event.__class__}")
+        logger.debug(f"Matching handlers: {matching_handlers}")
+
+        return matching_handlers
 
     def process_message(self, event: dict) -> List[TaskResults]:
         """
@@ -38,23 +37,10 @@ class StreamJobs(SteveJobs):
         if not (event_object and event_object.pre_check()):
             return []
 
-        # Handlers are (for now) run even the job is not configured in a package.
-        if isinstance(event_object, MergeRequestGitlabEvent):
-            SourceGitPRToDistGitPRHandler.get_signature(
-                event=event_object,
+        for handler_class in self.get_handlers_for_event():
+            handler_class.get_signature(
+                event=self.event,
                 job=None,
             ).apply_async()
 
-        if isinstance(event_object, PipelineGitlabEvent):
-            GitlabCIToSourceGitPRHandler.get_signature(
-                event=event_object,
-                job=None,
-            ).apply_async()
-
-        if isinstance(event_object, PullRequestFlagPagureEvent):
-            PagureCIToSourceGitPRHandler.get_signature(
-                event=event_object,
-                job=None,
-            ).apply_async()
-
-        return self.process_jobs(event_object)
+        return []

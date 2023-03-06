@@ -1,7 +1,24 @@
 # Copyright Contributors to the Packit project.
 # SPDX-License-Identifier: MIT
 
+from collections import defaultdict
 from enum import Enum
+from typing import Set, Type, Dict
+
+from packit_service.worker.events import Event
+from packit_service.worker.handlers import JobHandler
+
+SUPPORTED_EVENTS_FOR_HANDLER: Dict[Type[JobHandler], Set[Type[Event]]] = defaultdict(
+    set
+)
+
+
+def reacts_to(event: Type[Event]):
+    def _add_to_mapping(kls: Type[JobHandler]):
+        SUPPORTED_EVENTS_FOR_HANDLER[kls].add(event)
+        return kls
+
+    return _add_to_mapping
 
 
 class TaskName(str, Enum):

@@ -3,10 +3,9 @@
 import pytest
 from flexmock import flexmock
 
-from hardly.handlers import GitlabCIToSourceGitPRHandler, PagureCIToSourceGitPRHandler
+from hardly.jobs import StreamJobs
 from packit_service.config import ServiceConfig
 from packit_service.models import SourceGitPRDistGitPRModel
-from packit_service.worker.events.pagure import PullRequestFlagPagureEvent
 from packit_service.worker.parser import Parser
 from packit_service.worker.reporting import (
     BaseCommitStatus,
@@ -48,11 +47,7 @@ def test_sync_from_dist_git(
     request,
 ):
     event = Parser.parse_event(request.getfixturevalue(event))
-    handler = (
-        PagureCIToSourceGitPRHandler
-        if isinstance(event, PullRequestFlagPagureEvent)
-        else GitlabCIToSourceGitPRHandler
-    )
+    handler = StreamJobs(event).get_handlers_for_event().pop()
 
     dist_git_pr_model = flexmock(id=2)
     flexmock(handler).should_receive("dist_git_pr_model").and_return(dist_git_pr_model)

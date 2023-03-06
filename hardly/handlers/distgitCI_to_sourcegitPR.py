@@ -6,13 +6,13 @@ from logging import getLogger
 from os import getenv
 from typing import Optional
 
-from hardly.handlers.abstract import TaskName
+from hardly.handlers.abstract import TaskName, reacts_to
 from packit.config.job_config import JobConfig
 from packit.config.package_config import PackageConfig
 from packit_service.models import PullRequestModel, SourceGitPRDistGitPRModel
 from packit_service.worker.events import PipelineGitlabEvent
 from packit_service.worker.events.pagure import PullRequestFlagPagureEvent
-from packit_service.worker.handlers.abstract import JobHandler, reacts_to
+from packit_service.worker.handlers.abstract import JobHandler
 from packit_service.worker.mixin import (
     ConfigFromEventMixin,
     PackitAPIWithUpstreamMixin,
