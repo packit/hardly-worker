@@ -2,18 +2,26 @@
 # SPDX-License-Identifier: MIT
 
 from logging import getLogger
-from typing import List, Set, Type
+from typing import List, Set, Type, Optional
 
 from hardly.handlers.abstract import SUPPORTED_EVENTS_FOR_HANDLER
+from packit_service.worker.events import Event
 from packit_service.worker.handlers import JobHandler
-from packit_service.worker.jobs import SteveJobs
 from packit_service.worker.parser import Parser
 from packit_service.worker.result import TaskResults
 
 logger = getLogger(__name__)
 
 
-class StreamJobs(SteveJobs):
+class StreamJobs:
+    """
+    Similar to packit_service.SteveJobs, but we don't inherit from it
+    because there's actually a very few we have in common.
+    """
+
+    def __init__(self, event: Optional[Event] = None):
+        self.event = event
+
     def get_handlers_for_event(self) -> Set[Type[JobHandler]]:
         matching_handlers = {
             handler
@@ -33,8 +41,8 @@ class StreamJobs(SteveJobs):
         :param event:  dict with webhook/fed-mes payload
         """
 
-        event_object = Parser.parse_event(event)
-        if not (event_object and event_object.pre_check()):
+        self.event = Parser.parse_event(event)
+        if not (self.event and self.event.pre_check()):
             return []
 
         for handler_class in self.get_handlers_for_event():
