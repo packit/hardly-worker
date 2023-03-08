@@ -19,7 +19,5 @@ def pipeline_event():
 @pytest.fixture(scope="module")
 def fedora_dg_pr_flag_updated_event():
     return json.loads(
-        (
-            DATA_DIR / "webhooks" / "gitlab" / "fedora-dg-pr-flag-updated.json"
-        ).read_text()
+        (DATA_DIR / "fedmsg" / "fedora-dg-pr-flag-updated.json").read_text()
     )
