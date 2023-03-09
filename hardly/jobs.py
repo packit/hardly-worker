@@ -2,82 +2,53 @@
 # SPDX-License-Identifier: MIT
 
 from logging import getLogger
-from typing import List, Optional
+from typing import List, Set, Type, Optional
 
-from hardly.handlers import (
-    DistGitMRHandler,
-    SyncFromGitlabMRHandler,
-    SyncFromPagurePRHandler,
-)
-from packit_service.worker.events import (
-    Event,
-    MergeRequestGitlabEvent,
-    PipelineGitlabEvent,
-)
-from packit_service.worker.events.pagure import PullRequestFlagPagureEvent
-from packit_service.worker.handlers.abstract import JobHandler
-from packit_service.worker.jobs import SteveJobs
+from hardly.handlers.abstract import SUPPORTED_EVENTS_FOR_HANDLER
+from packit_service.worker.events import Event
+from packit_service.worker.handlers import JobHandler
 from packit_service.worker.parser import Parser
 from packit_service.worker.result import TaskResults
 
 logger = getLogger(__name__)
 
 
-class StreamJobs(SteveJobs):
-    def process_jobs(self, event: Event) -> List[TaskResults]:
-        return []  # For now, don't process default jobs, i.e. copr-build & tests
-        # return super().process_jobs(event)
+class StreamJobs:
+    """
+    Similar to packit_service.SteveJobs, but we don't inherit from it
+    because there's actually a very few we have in common.
+    """
 
-    def process_message(
-        self, event: dict, topic: Optional[str] = None, source: Optional[str] = None
-    ) -> List[TaskResults]:
+    def __init__(self, event: Optional[Event] = None):
+        self.event = event
+
+    def get_handlers_for_event(self) -> Set[Type[JobHandler]]:
+        matching_handlers = {
+            handler
+            for handler in SUPPORTED_EVENTS_FOR_HANDLER.keys()
+            if isinstance(self.event, tuple(SUPPORTED_EVENTS_FOR_HANDLER[handler]))
+        }
+        if not matching_handlers:
+            logger.debug(f"No handler found for event:\n{self.event.__class__}")
+        logger.debug(f"Matching handlers: {matching_handlers}")
+
+        return matching_handlers
+
+    def process_message(self, event: dict) -> List[TaskResults]:
         """
         Entrypoint for message processing.
 
         :param event:  dict with webhook/fed-mes payload
-        :param topic:  meant to be a topic provided by messaging subsystem (fedmsg, mqqt)
-        :param source: source of message
         """
-        if topic:
-            # let's pre-filter messages: we don't need to get debug logs from processing
-            # messages when we know beforehand that we are not interested in messages for such topic
-            topics = [
-                getattr(handler, "topic", None)
-                for handler in JobHandler.get_all_subclasses()
-            ]
 
-            if topic not in topics:
-                logger.debug(f"{topic} not in {topics}")
-                return []
-
-        event_object = Parser.parse_event(event)
-        if not (event_object and event_object.pre_check()):
+        self.event = Parser.parse_event(event)
+        if not (self.event and self.event.pre_check()):
             return []
 
-        # CoprBuildEvent.get_project returns None when the build id is not known
-        if not event_object.project:
-            logger.warning(
-                "Cannot obtain project from this event! "
-                "Skipping private repository check!"
-            )
-
-        # Handlers are (for now) run even the job is not configured in a package.
-        if isinstance(event_object, MergeRequestGitlabEvent):
-            DistGitMRHandler.get_signature(
-                event=event_object,
+        for handler_class in self.get_handlers_for_event():
+            handler_class.get_signature(
+                event=self.event,
                 job=None,
             ).apply_async()
 
-        if isinstance(event_object, PipelineGitlabEvent):
-            SyncFromGitlabMRHandler.get_signature(
-                event=event_object,
-                job=None,
-            ).apply_async()
-
-        if isinstance(event_object, PullRequestFlagPagureEvent):
-            SyncFromPagurePRHandler.get_signature(
-                event=event_object,
-                job=None,
-            ).apply_async()
-
-        return self.process_jobs(event_object)
+        return []
