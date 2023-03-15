@@ -11,7 +11,7 @@ from ogr.abstract import PullRequest
 from packit.api import PackitAPI
 from packit.config.job_config import JobConfig
 from packit.config.package_config import PackageConfig
-from packit.local_project import LocalProject
+from packit.local_project import CALCULATE, LocalProject, LocalProjectBuilder
 from packit_service.models import PullRequestModel, SourceGitPRDistGitPRModel
 from packit_service.worker.events import MergeRequestGitlabEvent
 from packit_service.worker.events.enums import GitlabEventAction
@@ -116,10 +116,11 @@ class SourceGitPRToDistGitPRHandler(
             source_project = self.service_config.get_project(
                 url=self.source_project_url
             )
-            self._local_project = LocalProject(
+            self._local_project = LocalProjectBuilder().build(
                 git_project=source_project,
                 ref=self.data.commit_sha,
                 working_dir=self.service_config.command_handler_work_dir,
+                git_repo=CALCULATE,
             )
             # We need to fetch tags from the upstream source-git repo
             # Details: https://github.com/packit/hardly/issues/61
