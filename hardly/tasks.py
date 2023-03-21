@@ -14,6 +14,7 @@ from hardly.handlers import (
     SourceGitPRToDistGitPRHandler,
     GitlabCIToSourceGitPRHandler,
     PagureCIToSourceGitPRHandler,
+    DistGitToSourceGitPRHandler,
 )
 from hardly.handlers.abstract import TaskName
 from hardly.jobs import StreamJobs
@@ -123,6 +124,18 @@ def run_pagure_ci_to_source_git_pr_handler(
     event: dict, package_config: dict, job_config: dict
 ):
     handler = PagureCIToSourceGitPRHandler(
+        package_config=load_package_config(package_config),
+        job_config=load_job_config(job_config),
+        event=event,
+    )
+    return get_handlers_task_results(handler.run_job(), event)
+
+
+@celery_app.task(name=TaskName.dist_git_to_source_git_pr, base=HandlerTaskWithRetry)
+def run_dist_git_to_source_git_pr_handler(
+    event: dict, package_config: dict, job_config: dict
+):
+    handler = DistGitToSourceGitPRHandler(
         package_config=load_package_config(package_config),
         job_config=load_job_config(job_config),
         event=event,

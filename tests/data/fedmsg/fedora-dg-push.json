@@ -1,0 +1,32 @@
+{
+  "commit": {
+    "agent": "pagure",
+    "branch": "main",
+    "email": "jpopelka@redhat.com",
+    "message": "python3_pkgversion is optional\n\nhttps://docs.fedoraproject.org/en-US/packaging-guidelines/Python/#_system_settings\n",
+    "name": "Jiri Popelka",
+    "namespace": "rpms",
+    "path": "/srv/git/repositories/rpms/python-httpretty.git",
+    "repo": "python-httpretty",
+    "rev": "22316f250c392d60ce9db2fcae0d28d453bde646",
+    "seen": false,
+    "stats": {
+      "files": {
+        "python-httpretty.spec": {
+          "additions": 13,
+          "deletions": 13,
+          "lines": 26
+        }
+      },
+      "total": {
+        "additions": 13,
+        "deletions": 13,
+        "files": 1,
+        "lines": 26
+      }
+    },
+    "summary": "python3_pkgversion is optional",
+    "username": "pagure"
+  },
+  "topic": "org.fedoraproject.prod.git.receive"
+}

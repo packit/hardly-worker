@@ -9,4 +9,4 @@ chmod 0700 "${PACKIT_HOME}/.ssh"
 
 grep -q gitlab.com "${PACKIT_HOME}/.ssh/known_hosts" || ssh-keyscan gitlab.com >>"${PACKIT_HOME}/.ssh/known_hosts"
 
-run_worker_.sh
+exec run_worker_.sh

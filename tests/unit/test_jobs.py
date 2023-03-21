@@ -1,12 +1,18 @@
 import pytest
 
 from hardly.handlers import (
+    DistGitToSourceGitPRHandler,
     GitlabCIToSourceGitPRHandler,
     PagureCIToSourceGitPRHandler,
     SourceGitPRToDistGitPRHandler,
 )
 from hardly.jobs import StreamJobs
-from packit_service.worker.events import MergeRequestGitlabEvent, PipelineGitlabEvent
+from packit_service.worker.events import (
+    MergeRequestGitlabEvent,
+    PipelineGitlabEvent,
+    PushGitlabEvent,
+    PushPagureEvent,
+)
 from packit_service.worker.events.pagure import PullRequestFlagPagureEvent
 
 
@@ -27,6 +33,16 @@ from packit_service.worker.events.pagure import PullRequestFlagPagureEvent
             PullRequestFlagPagureEvent,
             {PagureCIToSourceGitPRHandler},
             id="PullRequestFlagPagureEvent->PagureCIToSourceGitPRHandler",
+        ),
+        pytest.param(
+            PushGitlabEvent,
+            {DistGitToSourceGitPRHandler},
+            id="PushGitlabEvent->DistGitToSourceGitPRHandler",
+        ),
+        pytest.param(
+            PushPagureEvent,
+            {DistGitToSourceGitPRHandler},
+            id="PushPagureEvent->DistGitToSourceGitPRHandler",
         ),
     ],
 )

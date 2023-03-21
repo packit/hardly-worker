@@ -18,7 +18,7 @@ but is expected to eventually follow [this workflow](https://github.com/packit/r
 - [x] If a user creates a merge-request on the source-git repository:
   - [x] Create a matching merge-request to the dist-git repository.
   - [x] Sync the CI results from the dist-git merge-request to the source-git merge-request.
-- [ ] If the dist-git is updated, update the source-git repository by opening a PR.
+- [x] If the dist-git is updated, update the source-git repository by opening a PR.
 - [ ] User is able to convert source-git change to the dist-git change locally via CLI.
 
 ##### Should have:
