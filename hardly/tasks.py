@@ -97,11 +97,13 @@ def hardly_process(self, event: dict) -> List[TaskResults]:
 
 @celery_app.task(name=TaskName.source_git_pr_to_dist_git_pr, base=HandlerTaskWithRetry)
 def run_source_git_pr_to_dist_git_pr_handler(
-    event: dict, package_config: dict, job_config: dict
+    event: dict, packages_config: dict, job_config: dict
 ):
+    job_config_obj = load_job_config(job_config)
+    packages_config_obj = load_package_config(packages_config)
     handler = SourceGitPRToDistGitPRHandler(
-        package_config=load_package_config(package_config),
-        job_config=load_job_config(job_config),
+        package_config=packages_config_obj.get_package_config_for(job_config_obj),
+        job_config=job_config_obj,
         event=event,
     )
     return get_handlers_task_results(handler.run_job(), event)
@@ -109,11 +111,13 @@ def run_source_git_pr_to_dist_git_pr_handler(
 
 @celery_app.task(name=TaskName.gitlab_ci_to_source_git_pr, base=HandlerTaskWithRetry)
 def run_gitlab_ci_to_source_git_pr_handler(
-    event: dict, package_config: dict, job_config: dict
+    event: dict, packages_config: dict, job_config: dict
 ):
+    job_config_obj = load_job_config(job_config)
+    packages_config_obj = load_package_config(packages_config)
     handler = GitlabCIToSourceGitPRHandler(
-        package_config=load_package_config(package_config),
-        job_config=load_job_config(job_config),
+        package_config=packages_config_obj.get_package_config_for(job_config_obj),
+        job_config=job_config_obj,
         event=event,
     )
     return get_handlers_task_results(handler.run_job(), event)
@@ -121,11 +125,13 @@ def run_gitlab_ci_to_source_git_pr_handler(
 
 @celery_app.task(name=TaskName.pagure_ci_to_source_git_pr, base=HandlerTaskWithRetry)
 def run_pagure_ci_to_source_git_pr_handler(
-    event: dict, package_config: dict, job_config: dict
+    event: dict, packages_config: dict, job_config: dict
 ):
+    job_config_obj = load_job_config(job_config)
+    packages_config_obj = load_package_config(packages_config)
     handler = PagureCIToSourceGitPRHandler(
-        package_config=load_package_config(package_config),
-        job_config=load_job_config(job_config),
+        package_config=packages_config_obj.get_package_config_for(job_config_obj),
+        job_config=job_config_obj,
         event=event,
     )
     return get_handlers_task_results(handler.run_job(), event)
@@ -133,11 +139,13 @@ def run_pagure_ci_to_source_git_pr_handler(
 
 @celery_app.task(name=TaskName.dist_git_to_source_git_pr, base=HandlerTaskWithRetry)
 def run_dist_git_to_source_git_pr_handler(
-    event: dict, package_config: dict, job_config: dict
+    event: dict, packages_config: dict, job_config: dict
 ):
+    job_config_obj = load_job_config(job_config)
+    packages_config_obj = load_package_config(packages_config)
     handler = DistGitToSourceGitPRHandler(
-        package_config=load_package_config(package_config),
-        job_config=load_job_config(job_config),
+        package_config=packages_config_obj.get_package_config_for(job_config_obj),
+        job_config=job_config_obj,
         event=event,
     )
     return get_handlers_task_results(handler.run_job(), event)
