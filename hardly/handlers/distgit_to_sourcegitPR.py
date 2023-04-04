@@ -19,6 +19,7 @@ from packit_service.worker.mixin import (
     ConfigFromEventMixin,
     PackitAPIWithUpstreamMixin,
 )
+from packit_service.worker.result import TaskResults
 
 logger = getLogger(__name__)
 
@@ -109,12 +110,12 @@ class DistGitToSourceGitPRHandler(
         """
         if not self.source_git_local_project:
             logger.debug(f"There's no source-git repo for {self.project}")
-            return
+            return TaskResults(success=True)
 
         branch = self.data.git_ref
         if branch not in self.source_git_local_project.git_project.get_branches():
             logger.info(f"No {branch!r} branch in source-git repo to update")
-            return
+            return TaskResults(success=True)
 
         # Expect for now that the branches are named the same in dist-git and source-git
         logger.debug(
@@ -122,3 +123,5 @@ class DistGitToSourceGitPRHandler(
             f" to {self.source_git_local_project.git_project}#{branch}"
         )
         self.packit_api.sync_push(dist_git_branch=branch, source_git_branch=branch)
+
+        return TaskResults(success=True)
