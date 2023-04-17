@@ -5,7 +5,11 @@ from logging import getLogger
 from os import getenv
 from typing import Optional
 
-from hardly.constants import SOURCEGIT_URL, SOURCEGIT_NAMESPACE
+from hardly.constants import (
+    DISTGIT_TO_SOURCEGIT_PR_TITLE,
+    SOURCEGIT_URL,
+    SOURCEGIT_NAMESPACE,
+)
 from hardly.handlers.abstract import TaskName, reacts_to
 from packit.api import PackitAPI
 from packit.config.job_config import JobConfig
@@ -122,6 +126,10 @@ class DistGitToSourceGitPRHandler(
             f"About to sync {self.dist_git_local_project.git_project}#{branch}"
             f" to {self.source_git_local_project.git_project}#{branch}"
         )
-        self.packit_api.sync_push(dist_git_branch=branch, source_git_branch=branch)
+        self.packit_api.sync_push(
+            dist_git_branch=branch,
+            source_git_branch=branch,
+            title=DISTGIT_TO_SOURCEGIT_PR_TITLE,
+        )
 
         return TaskResults(success=True)

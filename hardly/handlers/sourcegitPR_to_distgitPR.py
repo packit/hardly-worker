@@ -6,6 +6,7 @@ from logging import getLogger
 from os import getenv
 from typing import Optional
 
+from hardly.constants import DISTGIT_TO_SOURCEGIT_PR_TITLE
 from hardly.handlers.abstract import TaskName, reacts_to
 from ogr.abstract import PullRequest
 from packit.api import PackitAPI
@@ -213,6 +214,10 @@ you should trigger a CI pipeline run via `Pipelines → Run pipeline`."""
         If user creates a merge-request on the source-git repository,
         create a matching merge-request to the dist-git repository.
         """
+        if self.pr_title.startswith(DISTGIT_TO_SOURCEGIT_PR_TITLE):
+            logger.debug(f"{DISTGIT_TO_SOURCEGIT_PR_TITLE} PR opened by us.")
+            return TaskResults(success=True)
+
         if not self.handle_target():
             logger.debug(
                 "Not creating/updating a dist-git MR from "
