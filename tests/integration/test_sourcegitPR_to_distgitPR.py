@@ -13,7 +13,7 @@ from packit.upstream import Upstream
 from packit_service.config import ServiceConfig
 from packit_service.constants import SANDCASTLE_WORK_DIR
 from packit_service.models import PullRequestModel, SourceGitPRDistGitPRModel
-from packit_service.service.db_triggers import AddPullRequestDbTrigger
+from packit_service.service.db_project_events import AddPullRequestDbTrigger
 from packit_service.utils import dump_package_config
 from packit_service.worker.monitoring import Pushgateway
 from packit_service.worker.parser import Parser
@@ -71,7 +71,9 @@ def test_source_git_pr_to_dist_git_pr(mr_event, dist_git_branches, target_repo_b
     trigger = flexmock(
         job_config_trigger_type=JobConfigTriggerType.pull_request, id=123, pr_id=5
     )
-    flexmock(AddPullRequestDbTrigger).should_receive("db_trigger").and_return(trigger)
+    flexmock(AddPullRequestDbTrigger).should_receive("db_project_event").and_return(
+        trigger
+    )
 
     flexmock(GitlabProject).should_receive("get_file_content").and_return(
         source_git_yaml

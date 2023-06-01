@@ -188,4 +188,4 @@ class PagureCIToSourceGitPRHandler(DistGitCIToSourceGitPRHandler):
         self.status_url = event["url"]
 
     def dist_git_pr_model(self) -> Optional[PullRequestModel]:
-        return self.data.db_trigger
+        return self.data.db_project_event
