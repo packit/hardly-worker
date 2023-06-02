@@ -141,7 +141,7 @@ This MR has been automatically created from
 
     event = Parser.parse_event(mr_event)
     results = run_source_git_pr_to_dist_git_pr_handler(
-        packages_config=dump_package_config(event.packages_config),
+        package_config=dump_package_config(event.packages_config),
         event=event.get_dict(),
         job_config=None,
     )

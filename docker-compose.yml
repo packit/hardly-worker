@@ -52,8 +52,8 @@ services:
       - ../packit/packit:/usr/local/lib/python3.11/site-packages/packit:ro,z
       - ../packit-service/packit_service:/usr/local/lib/python3.11/site-packages/packit_service:ro,z
       - ./secrets/${SERVICE}/dev/packit-service.yaml:/home/packit/.config/packit-service.yaml:ro,z
-      - ./secrets/${SERVICE}/dev/id_rsa.pub:/packit-ssh/id_rsa.pub:ro,z
-      - ./secrets/${SERVICE}/dev/id_rsa:/packit-ssh/id_rsa:ro,z
+      - ./secrets/${SERVICE}/dev/id_ed25519.pub:/packit-ssh/id_ed25519.pub:ro,z
+      - ./secrets/${SERVICE}/dev/id_ed25519:/packit-ssh/id_ed25519:ro,z
     user: "1024"
 
   service:
