@@ -4,7 +4,7 @@
 import logging
 from os import getenv
 from socket import gaierror
-from typing import List
+from typing import List, Optional
 
 from celery import Task
 from celery.signals import after_setup_logger
@@ -85,14 +85,25 @@ class HandlerTaskWithRetry(Task):
 @celery_app.task(
     name=getenv("CELERY_MAIN_TASK_NAME") or CELERY_DEFAULT_MAIN_TASK_NAME, bind=True
 )
-def hardly_process(self, event: dict) -> List[TaskResults]:
+def hardly_process(
+    self, event: dict, source: Optional[str] = None, event_type: Optional[str] = None
+) -> List[TaskResults]:
     """
     Main celery task for processing messages.
 
-    :param event: event data
-    :return: dictionary containing task results
+    For values of 'source' and 'event_type' see Parser.MAPPING.
+
+    Args:
+        event: event data
+        source: Source of the event, for example: "gitlab"
+        event_type: Type of the event, for example: "Merge Request Hook"
+
+    Returns:
+        task results
     """
-    return StreamJobs().process_message(event=event)
+    return StreamJobs().process_message(
+        event=event, source=source, event_type=event_type
+    )
 
 
 @celery_app.task(name=TaskName.source_git_pr_to_dist_git_pr, base=HandlerTaskWithRetry)

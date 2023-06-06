@@ -5,6 +5,7 @@ from logging import getLogger
 from typing import List, Set, Type, Optional
 
 from hardly.handlers.abstract import SUPPORTED_EVENTS_FOR_HANDLER
+from packit.utils import nested_get
 from packit_service.worker.events import Event
 from packit_service.worker.handlers import JobHandler
 from packit_service.worker.parser import Parser
@@ -34,14 +35,29 @@ class StreamJobs:
 
         return matching_handlers
 
-    def process_message(self, event: dict) -> List[TaskResults]:
+    def process_message(
+        self,
+        event: dict,
+        source: Optional[str] = None,
+        event_type: Optional[str] = None,
+    ) -> List[TaskResults]:
         """
         Entrypoint for message processing.
 
-        :param event:  dict with webhook/fed-mes payload
-        """
+        For values of 'source' and 'event_type' see Parser.MAPPING.
 
-        self.event = Parser.parse_event(event)
+        Args:
+            event: Dict with webhook/fed-msg payload.
+            source: Source of the event, for example: "gitlab".
+            event_type: Type of the event.
+
+        Returns:
+            List of results of the processing tasks.
+        """
+        parser = nested_get(
+            Parser.MAPPING, source, event_type, default=Parser.parse_event
+        )
+        self.event = parser(event)
         if not (self.event and self.event.pre_check()):
             return []
 
