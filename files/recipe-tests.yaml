@@ -8,7 +8,10 @@
     - name: Install test RPM dependencies
       ansible.builtin.dnf:
         name:
-          - python3-flexmock
           - python3-pytest
           - python3-pytest-cov
         state: present
+    - name: Install pip deps
+      ansible.builtin.pip:
+        name:
+          - flexmock # RHBZ#2120251
