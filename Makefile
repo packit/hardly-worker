@@ -3,7 +3,6 @@
 
 .PHONY: hardly test-image
 
-BASE_IMAGE ?= quay.io/packit/packit-worker
 # true|false
 PULL_BASE_IMAGE ?= true
 HARDLY_IMAGE ?= quay.io/packit/hardly:dev
