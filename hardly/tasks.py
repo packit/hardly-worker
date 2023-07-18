@@ -113,7 +113,9 @@ def run_source_git_pr_to_dist_git_pr_handler(
     job_config_obj = load_job_config(job_config)
     packages_config_obj = load_package_config(package_config)
     handler = SourceGitPRToDistGitPRHandler(
-        package_config=packages_config_obj.get_package_config_for(job_config_obj),
+        package_config=packages_config_obj.get_package_config_for(job_config_obj)
+        if packages_config_obj
+        else None,
         job_config=job_config_obj,
         event=event,
     )
@@ -127,7 +129,9 @@ def run_gitlab_ci_to_source_git_pr_handler(
     job_config_obj = load_job_config(job_config)
     packages_config_obj = load_package_config(package_config)
     handler = GitlabCIToSourceGitPRHandler(
-        package_config=packages_config_obj.get_package_config_for(job_config_obj),
+        package_config=packages_config_obj.get_package_config_for(job_config_obj)
+        if packages_config_obj
+        else None,
         job_config=job_config_obj,
         event=event,
     )
@@ -141,7 +145,9 @@ def run_pagure_ci_to_source_git_pr_handler(
     job_config_obj = load_job_config(job_config)
     packages_config_obj = load_package_config(package_config)
     handler = PagureCIToSourceGitPRHandler(
-        package_config=packages_config_obj.get_package_config_for(job_config_obj),
+        package_config=packages_config_obj.get_package_config_for(job_config_obj)
+        if packages_config_obj
+        else None,
         job_config=job_config_obj,
         event=event,
     )
@@ -155,7 +161,9 @@ def run_dist_git_to_source_git_pr_handler(
     job_config_obj = load_job_config(job_config)
     packages_config_obj = load_package_config(package_config)
     handler = DistGitToSourceGitPRHandler(
-        package_config=packages_config_obj.get_package_config_for(job_config_obj),
+        package_config=packages_config_obj.get_package_config_for(job_config_obj)
+        if packages_config_obj
+        else None,
         job_config=job_config_obj,
         event=event,
     )
