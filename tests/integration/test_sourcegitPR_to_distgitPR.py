@@ -12,8 +12,13 @@ from packit.local_project import LocalProject
 from packit.upstream import Upstream
 from packit_service.config import ServiceConfig
 from packit_service.constants import SANDCASTLE_WORK_DIR
-from packit_service.models import PullRequestModel, SourceGitPRDistGitPRModel
-from packit_service.service.db_project_events import AddPullRequestDbTrigger
+from packit_service.models import (
+    PullRequestModel,
+    SourceGitPRDistGitPRModel,
+    ProjectEventModel,
+    ProjectEventModelType,
+)
+from packit_service.service.db_project_events import AddPullRequestEventToDb
 from packit_service.utils import dump_package_config
 from packit_service.worker.monitoring import Pushgateway
 from packit_service.worker.parser import Parser
@@ -71,7 +76,7 @@ def test_source_git_pr_to_dist_git_pr(mr_event, dist_git_branches, target_repo_b
     trigger = flexmock(
         job_config_trigger_type=JobConfigTriggerType.pull_request, id=123, pr_id=5
     )
-    flexmock(AddPullRequestDbTrigger).should_receive("db_project_event").and_return(
+    flexmock(AddPullRequestEventToDb).should_receive("db_project_object").and_return(
         trigger
     )
 
@@ -80,8 +85,10 @@ def test_source_git_pr_to_dist_git_pr(mr_event, dist_git_branches, target_repo_b
     )
 
     flexmock(PullRequestModel).should_receive("get_or_create").and_return(
-        flexmock(id=1)
+        flexmock(id=1, project_event_model_type=ProjectEventModelType.pull_request),
     )
+
+    flexmock(ProjectEventModel).should_receive("get_or_create").and_return(flexmock())
     flexmock(SourceGitPRDistGitPRModel).should_receive(
         "get_by_source_git_id"
     ).and_return(None)
