@@ -9,7 +9,11 @@ from typing import Optional
 from hardly.handlers.abstract import TaskName, reacts_to
 from packit.config.job_config import JobConfig
 from packit.config.package_config import PackageConfig
-from packit_service.models import PullRequestModel, SourceGitPRDistGitPRModel
+from packit_service.models import (
+    PullRequestModel,
+    ProjectEventModel,
+    SourceGitPRDistGitPRModel,
+)
 from packit_service.worker.events import PipelineGitlabEvent
 from packit_service.worker.events.pagure import PullRequestFlagPagureEvent
 from packit_service.worker.handlers.abstract import JobHandler
@@ -150,12 +154,18 @@ class GitlabCIToSourceGitPRHandler(DistGitCIToSourceGitPRHandler):
                 r"(\S+)/-/merge_requests/(\d+)", self.merge_request_url
             ):
                 project = self.service_config.get_project(url=m[1])
-                return PullRequestModel.get_or_create(
+                pr_model = PullRequestModel.get_or_create(
                     pr_id=int(m[2]),
                     namespace=project.namespace,
                     repo_name=project.repo,
                     project_url=m[1],
                 )
+                ProjectEventModel.get_or_create(
+                    type=pr_model.project_event_model_type,
+                    event_id=pr_model.id,
+                    commit_sha=self.commit_sha,
+                )
+                return pr_model
         return None
 
 
@@ -188,4 +198,4 @@ class PagureCIToSourceGitPRHandler(DistGitCIToSourceGitPRHandler):
         self.status_url = event["url"]
 
     def dist_git_pr_model(self) -> Optional[PullRequestModel]:
-        return self.data.db_project_event
+        return self.data.db_project_object

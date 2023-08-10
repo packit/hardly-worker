@@ -13,7 +13,11 @@ from packit.api import PackitAPI
 from packit.config.job_config import JobConfig
 from packit.config.package_config import PackageConfig
 from packit.local_project import CALCULATE, LocalProject, LocalProjectBuilder
-from packit_service.models import PullRequestModel, SourceGitPRDistGitPRModel
+from packit_service.models import (
+    PullRequestModel,
+    SourceGitPRDistGitPRModel,
+    ProjectEventModel,
+)
 from packit_service.worker.events import MergeRequestGitlabEvent
 from packit_service.worker.events.enums import GitlabEventAction
 from packit_service.worker.handlers.abstract import JobHandler
@@ -75,6 +79,7 @@ class SourceGitPRToDistGitPRHandler(
         )
         self.target_repo_branch = event["target_repo_branch"]
         self.oldrev = event["oldrev"]
+        self.commit_sha = event["commit_sha"]
 
         # lazy
         self._source_git_pr_model = None
@@ -91,6 +96,12 @@ class SourceGitPRToDistGitPRHandler(
                 repo_name=self.project.repo,
                 project_url=self.project.get_web_url(),
             )
+            if self._source_git_pr_model:
+                ProjectEventModel.get_or_create(
+                    type=self._source_git_pr_model.project_event_model_type,
+                    event_id=self._source_git_pr_model.id,
+                    commit_sha=self.commit_sha,
+                )
         return self._source_git_pr_model
 
     @property
@@ -192,13 +203,17 @@ you should trigger a CI pipeline run via `Pipelines → Run pipeline`."""
             self.dist_git_pr.comment(msg)
         return True
 
-    @staticmethod
-    def dist_git_pr_in_db(dg_pr: PullRequest) -> bool:
+    def dist_git_pr_in_db(self, dg_pr: PullRequest, dg_commit_sha: str) -> bool:
         dg_pr_model = PullRequestModel.get_or_create(
             pr_id=dg_pr.id,
             namespace=dg_pr.target_project.namespace,
             repo_name=dg_pr.target_project.repo,
             project_url=dg_pr.target_project.get_web_url(),
+        )
+        ProjectEventModel.get_or_create(
+            type=dg_pr_model.project_event_model_type,
+            event_id=dg_pr_model.id,
+            commit_sha=dg_commit_sha,
         )
         if sg_dg := SourceGitPRDistGitPRModel.get_by_dist_git_id(dg_pr_model.id):
             logger.error(
@@ -248,9 +263,10 @@ you should trigger a CI pipeline run via `Pipelines → Run pipeline`."""
 
         logger.info(f"About to create a dist-git MR from source-git MR {self.pr_url}")
 
+        dg_commit_sha = self.project.get_pr(int(self.pr_identifier)).merge_commit_sha
         dg_pr = self.sync_release()
         # This check is probably not needed, it's here in case the #70 appears again.
-        if self.dist_git_pr_in_db(dg_pr):
+        if self.dist_git_pr_in_db(dg_pr, dg_commit_sha):
             return TaskResults(success=False)
 
         comment = f"""[Dist-git MR #{dg_pr.id}]({dg_pr.url})
