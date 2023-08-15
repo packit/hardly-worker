@@ -142,6 +142,7 @@ class GitlabCIToSourceGitPRHandler(DistGitCIToSourceGitPRHandler):
         )
         self.source: str = event["source"]
         self.merge_request_url: str = event["merge_request_url"]
+        self.commit_sha = event["commit_sha"]
 
     def dist_git_pr_model(self) -> Optional[PullRequestModel]:
         if self.source == "merge_request_event":
