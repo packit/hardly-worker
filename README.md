@@ -19,7 +19,8 @@ but is expected to eventually follow [this workflow](https://github.com/packit/r
   - [x] Create a matching merge-request to the dist-git repository.
   - [x] Sync the CI results from the dist-git merge-request to the source-git merge-request.
 - [x] If the dist-git is updated, update the source-git repository by opening a PR.
-- [ ] User is able to convert source-git change to the dist-git change locally via CLI.
+  - Implemented, but [not enabled yet](https://github.com/packit/hardly/issues/109).
+- [x] User is able to convert source-git change to the dist-git change locally via CLI.
 
 ##### Should have:
 
@@ -77,8 +78,8 @@ Or you can rebuild manually in
 
 ## Actual deployments
 
-- [Fedora](https://github.com/packit/deployment/blob/main/docs/fedora-source-git.md)
-- [CentOS Stream](https://github.com/packit/deployment/blob/main/docs/centos-stream-source-git.md)
+- [Fedora](https://github.com/packit/deployment/blob/main/docs/deployment/specifics/fedora-source-git.md)
+- [CentOS Stream](https://github.com/packit/deployment/blob/main/docs/deployment/specifics/centos-stream-source-git.md)
 
 ## Tests
 
