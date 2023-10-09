@@ -20,7 +20,7 @@ from packit_service.worker.parser import Parser
         pytest.param(
             "gitlab_push_event",
             "https://gitlab.com/packit-service/rpms/open-vm-tools",
-            None,
+            "packit-service/src",
             "https://gitlab.com/packit-service/src/open-vm-tools",
             id="Gitlab push",
         ),
