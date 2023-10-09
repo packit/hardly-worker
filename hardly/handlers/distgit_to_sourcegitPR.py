@@ -14,7 +14,7 @@ from hardly.handlers.abstract import TaskName, reacts_to
 from packit.api import PackitAPI
 from packit.config.job_config import JobConfig
 from packit.config.package_config import PackageConfig
-from packit.constants import DISTGIT_NAMESPACE
+from packit.constants import DISTGIT_INSTANCES
 from packit.local_project import CALCULATE, LocalProject, LocalProjectBuilder
 from packit_service.config import PackageConfigGetter
 from packit_service.worker.events import PushGitlabEvent, PushPagureEvent
@@ -63,7 +63,8 @@ class DistGitToSourceGitPRHandler(
             # then it must be defined as env. var.
             if not (namespace := getenv("SOURCEGIT_NAMESPACE")):
                 namespace = dg_lp.namespace.replace(
-                    f"{DISTGIT_NAMESPACE}", f"{SOURCEGIT_NAMESPACE}"
+                    f"{DISTGIT_INSTANCES['centpkg'].namespace}",
+                    f"{SOURCEGIT_NAMESPACE}",
                 )
             # Assume the repo name is the same
             project_url = f"{base_url}{namespace}/{dg_lp.repo_name}.git"
